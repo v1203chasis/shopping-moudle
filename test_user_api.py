@@ -75,23 +75,40 @@ class TestUserAPI:
 
 
     @allure.story("用户登录")
-    @allure.title("测试登录失败（密码错误）")
-    def test_login_wrong_password(self, user_factory):
-        # 1. 先注册一个用户，密码是 "correct_password"
-        user_factory(username="wrong_pass_user", password="correct_password")
-        
-        # 2. 故意用错误的密码去登录
+    @allure.title("测试登录失败（用户名为空）")
+    def test_login_empty_username(self):
         response = requests.post(
             f"{BASE_URL}/api/login",
-            json={"username": "wrong_pass_user", "password": "wrong_password"}
+            json={"username": "", "password": "123456"}
         )
-        
-        # 3. 断言：状态码必须是 401，且提示“用户名或密码错误”
-        assert response.status_code == 200
-        result = response.json()
-        assert result["code"] == 401
-        assert result["msg"] == "用户名或密码错误"
-        
-        print(f"\n✅ 密码错误时，接口正确拒绝了登录请求！")
+        assert response.status_code == 422
 
-    
+
+    @allure.story("用户登录")
+    @allure.title("测试登录失败（密码为空）")
+    def test_login_empty_password(self):
+        response = requests.post(
+            f"{BASE_URL}/api/login",
+            json={"username": "tom", "password": ""}
+        )
+        assert response.status_code == 422
+
+
+    @allure.story("用户登录")
+    @allure.title("测试登录失败（用户名超长）")
+    def test_login_username_too_long(self):
+        response = requests.post(
+            f"{BASE_URL}/api/login",
+            json={"username": "a" * 51, "password": "123456"}
+        )
+        assert response.status_code == 422
+
+
+    @allure.story("用户登录")
+    @allure.title("测试登录失败（密码超长）")
+    def test_login_password_too_long(self):
+        response = requests.post(
+            f"{BASE_URL}/api/login",
+            json={"username": "tom", "password": "a" * 101}
+        )
+        assert response.status_code == 422

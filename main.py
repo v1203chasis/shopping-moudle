@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
 from database import init_db
 from db_helper import db  # ✅ 这样才正确
 import crud_product 
@@ -11,9 +11,9 @@ init_db()
 app = FastAPI()
 
 class ProductCreate(BaseModel):
-    name: str
-    price: float
-    stock: int = 0
+    name: str=Field(...,min_length=1,max_length=50)
+    price: float=Field(...,gt=0)
+    stock: int = Field(...,ge=0)
 
 @app.post("/api/products")
 def create_product(product: ProductCreate):
@@ -65,8 +65,8 @@ def update_product(product_id: int, product: ProductCreate):
     }
 
 class UserCreate(BaseModel):
-    username: str
-    password: str
+    username: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=1, max_length=100)
 
 
 @app.post("/api/register")
@@ -90,4 +90,4 @@ def login(user: UserCreate):
         "msg":"登录成功！",
         "data":{"id":db_user["id"],"username":db_user["username"]}
     }
-    
+

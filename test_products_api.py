@@ -86,3 +86,69 @@ class TestProductAPI:
         assert db_rows[0]["stock"] == new_stock
         
         print(f"\n✅ 商品 {product_id} 修改验证通过！")
+
+
+    @allure.story("商品管理")
+    @allure.title("测试新增商品失败（价格为0）")
+    def test_create_product_price_zero(self):
+        """价格 = 0，期望 422"""
+        response = requests.post(
+        f"{BASE_URL}/api/products",
+        json={"name": "测试商品", "price": 0, "stock": 10}
+    )
+        assert response.status_code == 422, f"期望422，实际{response.status_code}"
+
+    @allure.story("商品管理")
+    @allure.title("测试新增商品失败（价格为负数）")
+    def test_create_product_price_negative(self):
+        """价格 = -1，期望 422"""
+        response = requests.post(
+        f"{BASE_URL}/api/products",
+        json={"name": "测试商品", "price": -1, "stock": 10}
+    )
+        assert response.status_code == 422, f"期望422，实际{response.status_code}"     
+
+    @allure.story("商品管理")
+    @allure.title("测试新增商品成功（价格=0.01，最小值）")
+    def test_create_product_price_min(self):
+        """价格 = 0.01，期望 200"""
+        response = requests.post(
+                f"{BASE_URL}/api/products",
+                json={"name": "测试商品", "price": 0.01, "stock": 10}
+            )
+        assert response.status_code == 200, f"期望422，实际{response.status_code}"     
+
+
+    @allure.story("商品管理")
+    @allure.title("测试新增商品成功（库存=0）")
+    def test_create_product_stock_zero(self):
+        """库存 = 0，期望 200"""
+        response = requests.post(
+        f"{BASE_URL}/api/products",
+        json={"name": "无库存商品", "price": 10, "stock": 0}
+    )
+        assert response.status_code == 200, f"期望200，实际{response.status_code}"
+        
+    @allure.story("商品管理")
+    @allure.title("测试新增商品失败（库存为负数）")
+    def test_create_product_stock_negative(self):
+        """库存 = -1，期望 422"""
+        response = requests.post(
+        f"{BASE_URL}/api/products",
+        json={"name": "测试商品", "price": 10, "stock": -1}
+    )
+        assert response.status_code == 422, f"期望422，实际{response.status_code}"
+
+
+    @allure.story("商品管理")
+    @allure.title("测试新增商品失败（名称为空）")
+    def test_create_product_name_empty(self):
+        """名称 = 空，期望 422"""
+        response = requests.post(
+        f"{BASE_URL}/api/products",
+        json={"name": "", "price": 10, "stock": 10}
+    )
+        assert response.status_code == 422, f"期望422，实际{response.status_code}"
+
+
+    
