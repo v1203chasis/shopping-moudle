@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+allure-results/
+shop.db
