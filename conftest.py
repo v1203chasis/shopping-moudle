@@ -1,34 +1,61 @@
 import pytest
 import requests
+from db_helper import db
 
 # 后端的基础地址
 BASE_URL = "http://127.0.0.1:8000"
 
+
+# ================= 商品工厂 =================
 @pytest.fixture
 def product_factory():
-    """
-    这个 fixture 就像一个工厂：
-    1. 测试开始前，自动造一个商品（前置）。
-    2. 测试结束后，自动把造的商品删掉（后置）。
-    """
-    created_ids = []  # 记录本次测试创建了哪些商品ID，方便后面清理
+    created_ids = []
 
-    # 定义一个内部函数，供测试用例调用，用来“创建商品”
-    def _create_product(name, price, stock=0): # 加上 stock 参数
+    def _create_product(name, price, stock=0):
         response = requests.post(
             f"{BASE_URL}/api/products",
-            json={"name": name, "price": price, "stock": stock} # 传给后端
+            json={"name": name, "price": price, "stock": stock}
         )
-        
         assert response.status_code == 200, "创建商品失败"
         product_id = response.json()["data"]["id"]
-        created_ids.append(product_id)  # 记录下来
+        created_ids.append(product_id)
         return product_id
 
-    # 把创建商品的函数交出去（yield 之前的代码是前置）
     yield _create_product
 
-    # 下面是后置清理（yield 之后的代码）
-    # 测试跑完后，把我们造出来的商品都删掉，还数据库一个清净
     for pid in created_ids:
         requests.delete(f"{BASE_URL}/api/products/{pid}")
+
+
+# ================= 用户工厂 =================
+
+@pytest.fixture
+def user_factory():
+    created_ids = []
+
+    def _create_user(username, password):
+        response = requests.post(
+            f"{BASE_URL}/api/register",
+            json={"username": username, "password": password}
+        )
+        assert response.status_code == 200, "注册接口请求失败"
+        
+        result = response.json()
+        if "data" in result:
+            # 注册成功，从 data 里取 id
+            user_id = result["data"]["id"]
+        else:
+            # 用户已存在，去数据库里查出来
+            db_rows = db.execute_query(
+                "SELECT id FROM users WHERE username = ?", (username,)
+            )
+            user_id = db_rows[0]["id"]
+        
+        created_ids.append(user_id)
+        return user_id
+
+    yield _create_user
+
+    # 测试结束后，直接从数据库清理用户，不调接口
+    for uid in created_ids:
+        db.execute_update("DELETE FROM users WHERE id = ?", (uid,))

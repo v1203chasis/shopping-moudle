@@ -1,17 +1,13 @@
 import sqlite3
 
-# 数据库文件名统一在这里定义
 DB_FILE = "shop.db"
 
-def get_connection():
-    """获取数据库连接，所有操作数据库的地方都调用这个函数"""
-    conn = sqlite3.connect(DB_FILE)
-    return conn
-
 def init_db():
-    """初始化数据库，创建商品表"""
-    conn = get_connection()
+    """初始化数据库，创建商品表和用户表"""
+    conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
+    
+    # 1. 创建商品表（你之前写好的）
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,6 +16,15 @@ def init_db():
             stock INTEGER NOT NULL DEFAULT 0
         )
     ''')
+    
+    # 2. 创建用户表（今天新增的）
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL
+        )
+    ''')
+    
     conn.commit()
     conn.close()
-

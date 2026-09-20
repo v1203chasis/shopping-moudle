@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from database import init_db
 from db_helper import db  # ✅ 这样才正确
 import crud_product 
+import crud_user
 
 # 启动时初始化数据库
 init_db()
@@ -62,3 +63,31 @@ def update_product(product_id: int, product: ProductCreate):
             "stock": product.stock
         }
     }
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/api/register")
+def register(user: UserCreate):
+    existing_user = crud_user.get_user_by_username(user.username)
+    if existing_user is not None:
+        return {"msg":"用户已存在","code":400}
+    new_user_id = crud_user.create_user_in_db(user.username,user.password)
+    return {
+        "msg":"注册成功！",
+        "data":{"id":new_user_id,"username":user.username}
+    }
+
+
+@app.post("/api/login")
+def login(user: UserCreate):
+    db_user = crud_user.get_user_by_username(user.username)
+    if  not db_user or db_user["password"] != user.password:
+        return {"msg":"用户名或密码错误","code":401}
+    return{
+        "msg":"登录成功！",
+        "data":{"id":db_user["id"],"username":db_user["username"]}
+    }
+    
