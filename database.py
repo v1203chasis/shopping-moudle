@@ -25,6 +25,25 @@ def init_db():
             password TEXT NOT NULL
         )
     ''')
-    
+
+
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS carts (   
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        product_id INTEGER NOT NULL,
+        quantity INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (product_id) REFERENCES products(id)
+    )
+''')
     conn.commit()
     conn.close()
+
+
+
+
+    
+    

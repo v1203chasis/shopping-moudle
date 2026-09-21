@@ -2,6 +2,8 @@ import pytest
 import requests
 import allure
 from db_helper import db
+from jsonpath_ng import parse
+import jsonschema
 
 BASE_URL = "http://127.0.0.1:8000"
 
@@ -69,8 +71,10 @@ class TestUserAPI:
         assert response.status_code == 200
         result = response.json()
         assert result["msg"] == "登录成功！"
-        assert result["data"]["username"] == username
-        
+    
+        jsonpath_expr = parse("$.data.username")
+        match = jsonpath_expr.find(result)
+        assert match[0].value == username, "用户名不匹配"
         print(f"\n✅ 用户 {username} 登录成功！")
 
 

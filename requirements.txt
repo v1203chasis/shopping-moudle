@@ -1,0 +1,6 @@
+pytest
+requests
+allure-pytest
+pytest-html
+jsonpath-ng
+jsonschema

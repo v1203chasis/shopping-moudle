@@ -4,6 +4,8 @@ from database import init_db
 from db_helper import db  # ✅ 这样才正确
 import crud_product 
 import crud_user
+import crud_cart
+from fastapi import HTTPException
 
 # 启动时初始化数据库
 init_db()
@@ -23,37 +25,21 @@ def create_product(product: ProductCreate):
         "data": {"id": new_id, "name": product.name, "price": product.price, "stock": product.stock}
     }
 
-@app.get("/api/products")
-def get_products():
-    return {"msg": "获取成功", "data": crud_product.get_all_products()}
-
 @app.get("/api/products/{product_id}")
 def get_product(product_id: int):
-    # 👇 改成调用专门查单个商品的函数
     product = crud_product.get_product_by_id(product_id)
     if not product:
-        return {"msg": "商品不存在", "code": 404}
+        raise HTTPException(status_code=404, detail="商品不存在")
     return {"msg": "获取成功", "data": product}
-
-
-@app.delete("/api/products/{product_id}")
-def delete_product(product_id: int):
-    success = crud_product.delete_product_from_db(product_id)
-    if not success:
-        return {"msg": "商品不存在", "code": 404}
-    return {"msg": "删除成功", "data": {"id": product_id}}
 
 
 @app.put("/api/products/{product_id}")
 def update_product(product_id: int, product: ProductCreate):
-    # 调用 crud_product 的更新逻辑
     success = crud_product.update_product_in_db(
         product_id, product.name, product.price, product.stock
     )
-    
     if not success:
-        return {"msg": "商品不存在", "code": 404}
-    
+        raise HTTPException(status_code=404, detail="商品不存在")  # ✅ 抛出真正的 HTTP 404
     return {
         "msg": "商品修改成功！",
         "data": {
@@ -63,6 +49,14 @@ def update_product(product_id: int, product: ProductCreate):
             "stock": product.stock
         }
     }
+
+
+@app.delete("/api/products/{product_id}")
+def delete_product(product_id: int):
+    success = crud_product.delete_product_from_db(product_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="商品不存在")
+    return {"msg": "删除成功", "data": {"id": product_id}}
 
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=1, max_length=50)
@@ -91,3 +85,51 @@ def login(user: UserCreate):
         "data":{"id":db_user["id"],"username":db_user["username"]}
     }
 
+
+class CartCreate(BaseModel):
+    user_id: int = Field(..., gt=0)
+    product_id: int = Field(..., gt=0)
+    quantity: int = Field(..., gt=0)
+
+
+class CartUpdate(BaseModel):
+    quantity: int = Field(..., gt=0)
+
+
+@app.post("/api/cart")
+def add_to_cart(req: CartCreate):
+    result = crud_cart.add_to_cart(req.user_id, req.product_id, req.quantity)
+
+    # 把业务码转成 HTTP 状态码
+    if result.get("code") != 200:
+        raise HTTPException(status_code=result.get("code"), detail=result.get("msg"))
+
+    return result
+
+
+@app.get("/api/cart")
+def get_cart(user_id: int):
+    return crud_cart.get_cart(user_id)
+
+
+from fastapi import HTTPException  # 确保文件顶部有导入这个
+
+@app.put("/api/cart/{cart_id}")
+def update_cart(cart_id: int, req: CartUpdate):
+    result = crud_cart.update_cart_quantity(cart_id, req.quantity)
+    if result.get("code") != 200:
+        raise HTTPException(status_code=result.get("code"), detail=result.get("msg"))
+    return result
+
+
+@app.delete("/api/cart/{cart_id}")
+def delete_cart(cart_id: int):
+    result = crud_cart.delete_cart_item(cart_id)
+    if result.get("code") != 200:
+        raise HTTPException(status_code=result.get("code"), detail=result.get("msg"))
+    return result
+
+
+@app.delete("/api/cart")
+def clear_cart(user_id: int):
+    return crud_cart.clear_cart(user_id)

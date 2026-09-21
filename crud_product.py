@@ -33,15 +33,11 @@ def delete_product_from_db(product_id):
     return True
 
 def update_product_in_db(product_id, name, price, stock):
-    """更新商品信息，返回 True 表示成功，False 表示商品不存在"""
-    # 1. 先检查商品是否存在
     rows = db.execute_query("SELECT id FROM products WHERE id = ?", (product_id,))
     if not rows:
-        return False  # 商品不存在，直接返回 False
-    
-    # 2. 执行更新
+        return False
     db.execute_update(
         "UPDATE products SET name = ?, price = ?, stock = ? WHERE id = ?",
-        (name, price, stock, product_id)
+        (name, price, stock, product_id)  # 必须四个参数，顺序也要对
     )
     return True

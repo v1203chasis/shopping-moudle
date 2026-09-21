@@ -7,10 +7,11 @@ BASE_URL = "http://127.0.0.1:8000"
 
 
 # ================= 商品工厂 =================
+
+
 @pytest.fixture
 def product_factory():
     created_ids = []
-
     def _create_product(name, price, stock=0):
         response = requests.post(
             f"{BASE_URL}/api/products",
@@ -20,9 +21,7 @@ def product_factory():
         product_id = response.json()["data"]["id"]
         created_ids.append(product_id)
         return product_id
-
     yield _create_product
-
     for pid in created_ids:
         requests.delete(f"{BASE_URL}/api/products/{pid}")
 

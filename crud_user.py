@@ -10,12 +10,20 @@ def get_all_users():
     return db.execute_query("SELECT id, username FROM users")
 
 
-def get_user_by_username(usernsme):
+def get_user_by_username(username):
     """根据 ID 查询单个用户，返回字典或 None"""
     rows = db.execute_query(
          "SELECT id, username,password FROM users WHERE username = ?",
-         (usernsme,))
+         (username,))
 #如果查到了，返回第一条数据；如果没查到，返回 None
+    return rows[0] if rows else None
+
+def get_user_by_id(user_id):
+    """根据用户 ID 查用户"""
+    rows = db.execute_query(
+        "SELECT * FROM users WHERE id = ?",
+        (user_id,)
+    )
     return rows[0] if rows else None
 
 
