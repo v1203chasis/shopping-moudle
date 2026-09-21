@@ -58,3 +58,47 @@ def user_factory():
     # 测试结束后，直接从数据库清理用户，不调接口
     for uid in created_ids:
         db.execute_update("DELETE FROM users WHERE id = ?", (uid,))
+
+
+# ================= 订单工厂 =================
+
+@pytest.fixture
+def order_factory(product_factory, user_factory):
+    """
+    订单工厂 Fixture
+    动态创建订单，测试结束后通过取消订单接口清理数据（顺便回滚库存）
+    """
+    created_order_ids = []
+
+    def _create_order(product_name="测试商品", price=10.0, stock=100, quantity=1):
+        # 1. 先造一个用户和商品（复用已有的工厂）
+        user_id = user_factory(username=f"order_user_{len(created_order_ids)}", password="123456")
+        product_id = product_factory(name=product_name, price=price, stock=stock)
+
+        # 2. 调用下单接口
+        response = requests.post(
+            f"{BASE_URL}/api/orders",
+            json={"user_id": user_id, "product_id": product_id, "quantity": quantity}
+        )
+        assert response.status_code == 200, f"下单失败: {response.text}"
+        order_id = response.json()["data"]["order_id"]
+        created_order_ids.append(order_id)
+
+        # 3. 返回订单 ID 和相关信息（方便测试用例使用）
+        return {
+            "order_id": order_id,
+            "user_id": user_id,
+            "product_id": product_id,
+            "quantity": quantity,
+            "total_price": price * quantity,
+        }
+
+    yield _create_order
+
+    # ===== 测试结束后的清理工作 =====
+    for order_id in created_order_ids:
+        try:
+            # 调用取消订单接口，顺便回滚库存
+            requests.put(f"{BASE_URL}/api/orders/{order_id}/cancel")
+        except Exception:
+            pass

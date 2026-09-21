@@ -1,4 +1,32 @@
+# Python 缓存
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+
+# 虚拟环境
+.venv/
+venv/
+env/
+ENV/
+
+# 测试报告
+report/
+.pytest_cache/
 allure-results/
-shop.db
+
+# 数据库文件（重要！不传数据库，因为每个人本地跑都不一样）
+*.db
+*.sqlite3
+
+# IDE 配置
+.idea/
+.vscode/
+*.swp
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log

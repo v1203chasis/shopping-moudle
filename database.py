@@ -39,6 +39,21 @@ def init_db():
         FOREIGN KEY (product_id) REFERENCES products(id)
     )
 ''')
+        # 4. 创建订单表
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            quantity INTEGER NOT NULL,
+            total_price REAL NOT NULL,
+            status TEXT NOT NULL DEFAULT 'created',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (product_id) REFERENCES products(id)
+        )
+    ''')
+    
     conn.commit()
     conn.close()
 

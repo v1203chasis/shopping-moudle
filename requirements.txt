@@ -4,3 +4,6 @@ allure-pytest
 pytest-html
 jsonpath-ng
 jsonschema
+fastapi
+uvicorn
+pydantic

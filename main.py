@@ -5,6 +5,7 @@ from db_helper import db  # ✅ 这样才正确
 import crud_product 
 import crud_user
 import crud_cart
+import crud_order
 from fastapi import HTTPException
 
 # 启动时初始化数据库
@@ -133,3 +134,54 @@ def delete_cart(cart_id: int):
 @app.delete("/api/cart")
 def clear_cart(user_id: int):
     return crud_cart.clear_cart(user_id)
+
+
+# ==================== 订单模块 ====================
+
+class OrderCreate(BaseModel):
+    user_id: int = Field(..., gt=0)
+    product_id: int = Field(..., gt=0)
+    quantity: int = Field(..., gt=0)
+
+# ==================== 订单接口 ====================
+
+@app.post("/api/orders")
+def create_order_api(req: OrderCreate):
+    """创建订单（下单）"""
+    result = crud_order.create_order(req.user_id, req.product_id, req.quantity)
+
+    # 模式二：解析后再抛出
+    if result["code"] != 200:
+        raise HTTPException(status_code=result["code"], detail=result["msg"])
+    return result
+
+
+@app.get("/api/orders/{order_id}")
+def get_order_api(order_id: int):
+    """查询单个订单"""
+    order = crud_order.get_order_by_id(order_id)
+
+    # 模式一：直接抛出
+    if not order:
+        raise HTTPException(status_code=404, detail="订单不存在")
+    return {"msg": "获取成功", "data": order}
+
+
+@app.get("/api/orders")
+def get_user_orders_api(user_id: int):
+    """查询某个用户的所有订单"""
+    orders = crud_order.get_user_orders(user_id)
+    return {"msg": "获取成功", "data": orders}
+
+
+@app.put("/api/orders/{order_id}/cancel")
+def cancel_order_api(order_id: int):
+    """取消订单"""
+    result = crud_order.cancel_order(order_id)
+
+    # 模式二：解析后再抛出
+    if result["code"] != 200:
+        raise HTTPException(status_code=result["code"], detail=result["msg"])
+    return result
+
+
