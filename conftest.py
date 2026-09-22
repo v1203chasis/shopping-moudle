@@ -102,3 +102,46 @@ def order_factory(product_factory, user_factory):
             requests.put(f"{BASE_URL}/api/orders/{order_id}/cancel")
         except Exception:
             pass
+
+
+ # ================= 支付工厂 =================
+
+@pytest.fixture
+def payment_factory(order_factory):
+    """
+    支付工厂 Fixture
+    创建一个订单并支付，测试结束后自动清理数据
+    """
+    created_order_ids = []
+
+    def _create_payment(product_name="支付测试商品", price=10.0, stock=100, quantity=1):
+        # 1. 先用 order_factory 创建一个订单
+        order_info = order_factory(product_name=product_name, price=price, stock=stock, quantity=quantity)
+        order_id = order_info["order_id"]
+
+        # 2. 调用支付接口
+        response = requests.post(f"{BASE_URL}/api/payments/{order_id}")
+        assert response.status_code == 200, f"支付失败: {response.text}"
+
+        created_order_ids.append(order_id)
+
+        # 3. 返回订单 ID 和支付信息
+        return {
+            "order_id": order_id,
+            "user_id": order_info["user_id"],
+            "product_id": order_info["product_id"],
+            "quantity": quantity,
+            "amount": price * quantity,
+        }
+
+    yield _create_payment
+
+    # ===== 测试结束后的清理工作 =====
+    for order_id in created_order_ids:
+        try:
+            # 1. 先尝试退款（把订单状态从 paid 变回 refunded）
+            requests.put(f"{BASE_URL}/api/payments/{order_id}/refund")
+            # 2. 再取消订单（回滚库存）
+            requests.put(f"{BASE_URL}/api/orders/{order_id}/cancel")
+        except Exception:
+            pass   

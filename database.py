@@ -53,6 +53,20 @@ def init_db():
             FOREIGN KEY (product_id) REFERENCES products(id)
         )
     ''')
+
+        # 5. 创建支付表
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id INTEGER NOT NULL UNIQUE,      -- 一个订单只对应一条支付记录
+            amount REAL NOT NULL,                  -- 支付金额
+            status TEXT NOT NULL DEFAULT 'pending', -- pending / success / refunded
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (order_id) REFERENCES orders(id)
+        )
+    ''')
+
+
     
     conn.commit()
     conn.close()

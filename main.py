@@ -6,6 +6,7 @@ import crud_product
 import crud_user
 import crud_cart
 import crud_order
+import crud_payment  
 from fastapi import HTTPException
 
 # 启动时初始化数据库
@@ -185,3 +186,36 @@ def cancel_order_api(order_id: int):
     return result
 
 
+# ==================== 支付接口 ====================
+
+@app.post("/api/payments/{order_id}")
+def pay_order_api(order_id: int):
+    """支付订单"""
+    result = crud_payment.pay_order(order_id)
+
+    # 模式二：解析后再抛出
+    if result["code"] != 200:
+        raise HTTPException(status_code=result["code"], detail=result["msg"])
+    return result
+
+
+@app.get("/api/payments/{order_id}")
+def get_payment_api(order_id: int):
+    """查询订单的支付记录"""
+    payment = crud_payment.get_payment_by_order(order_id)
+
+    # 模式一：直接抛出
+    if not payment:
+        raise HTTPException(status_code=404, detail="支付记录不存在")
+    return {"msg": "获取成功", "data": payment}
+
+
+@app.put("/api/payments/{order_id}/refund")
+def refund_order_api(order_id: int):
+    """退款"""
+    result = crud_payment.refund_order(order_id)
+
+    # 模式二：解析后再抛出
+    if result["code"] != 200:
+        raise HTTPException(status_code=result["code"], detail=result["msg"])
+    return result
