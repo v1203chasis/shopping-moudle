@@ -10,11 +10,13 @@ BASE_URL = "http://127.0.0.1:8000"
 
 @allure.epic("电商后端系统")
 @allure.feature("支付管理模块")
+@pytest.mark.payment
 class TestPaymentAPI:
 
     # ==================== 1. 支付成功 ====================
     @allure.story("支付订单")
     @allure.title("支付成功，验证订单状态和支付记录")
+    @pytest.mark.smoke
     def test_pay_order(self, order_factory):
         """支付 -> 验证订单状态变 paid -> 验证支付记录落库"""
         # 1. 造一个订单
@@ -44,6 +46,7 @@ class TestPaymentAPI:
     # ==================== 2. 查询支付记录 ====================
     @allure.story("查询支付")
     @allure.title("查询订单的支付记录")
+    @pytest.mark.smoke
     def test_get_payment(self, payment_factory):
         """查支付记录，验证返回数据"""
         payment_info = payment_factory(product_name="查询支付商品", price=15.0, quantity=2)
@@ -59,6 +62,7 @@ class TestPaymentAPI:
     # ==================== 3. 退款成功 ====================
     @allure.story("退款")
     @allure.title("退款成功，验证订单状态和支付记录变更")
+    @pytest.mark.smoke
     def test_refund_order(self, payment_factory):
         """退款 -> 订单状态变 refunded -> 支付记录状态变 refunded"""
         payment_info = payment_factory(product_name="退款测试商品", price=10.0, quantity=1)

@@ -9,11 +9,13 @@ BASE_URL = "http://127.0.0.1:8000"
 
 @allure.epic("电商后端系统")
 @allure.feature("商品管理模块")
+@pytest.mark.product
 class TestProductAPI:
 
     # ==================== 1. 创建 + 查接口 + 查数据库 ====================
     @allure.story("添加并查询商品")
     @allure.title("测试添加商品：{name}，价格：{price}")
+    @pytest.mark.smoke
     @pytest.mark.parametrize("name, price, stock", [
         ("猪猪玩偶", 12.99, 50),
         ("deepseek周边", 29.9, 100),
@@ -46,6 +48,7 @@ class TestProductAPI:
     # ==================== 2. 修改商品（成功场景） ====================
     @allure.story("修改商品信息")
     @allure.title("测试修改商品：{new_name}")
+    @pytest.mark.smoke
     @pytest.mark.parametrize("old_name, new_name, new_price, new_stock", [
         ("原始猪猪", "修改后的猪猪", 99.9, 50),
         ("原始小深", "修改后的小深", 199.9, 100),

@@ -9,10 +9,12 @@ BASE_URL = "http://127.0.0.1:8000"
 
 @allure.epic("电商后端系统")
 @allure.feature("用户管理模块")
+@pytest.mark.user
 class TestUserAPI:
 
     @allure.story("用户注册")
     @allure.title("测试注册新用户：{username}")
+    @pytest.mark.smoke
     @pytest.mark.parametrize("username, password", [
         ("小猪", "pass123"),
         ("小深", "pass456"),
@@ -33,6 +35,7 @@ class TestUserAPI:
 
     @allure.story("用户注册")
     @allure.title("测试重复注册（用户名已存在）")
+    @pytest.mark.smoke
     def test_register_duplicate(self, user_factory):
         # 1. 先注册一个用户
         user_factory(username="duplicate_user", password="123456")
@@ -53,6 +56,7 @@ class TestUserAPI:
 
     @allure.story("用户登录")
     @allure.title("测试登录成功：{username}")
+    @pytest.mark.smoke
     @pytest.mark.parametrize("username, password", [
         ("login_user_a", "pass_a"),
         ("login_user_b", "pass_b"),

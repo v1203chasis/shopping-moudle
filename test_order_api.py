@@ -8,11 +8,13 @@ BASE_URL = "http://127.0.0.1:8000"
 
 @allure.epic("电商后端系统")
 @allure.feature("订单管理模块")
+@pytest.mark.order
 class TestOrderAPI:
 
     # ==================== 1. 下单成功 + 三重验证 ====================
     @allure.story("创建订单")
     @allure.title("测试下单成功，并验证库存扣减和订单落库")
+    @pytest.mark.smoke
     def test_create_order(self, order_factory):
         """下单 -> 查接口 -> 查数据库 -> 验证库存扣减"""
         # 1. 准备数据（工厂会自动下单）
@@ -49,6 +51,7 @@ class TestOrderAPI:
     # ==================== 2. 查询订单（单个 + 列表） ====================
     @allure.story("查询订单")
     @allure.title("测试查询单个订单")
+    @pytest.mark.smoke
     def test_get_order_by_id(self, order_factory):
         """查单个订单，验证返回数据"""
         order_info = order_factory(product_name="查询测试商品", price=15.0, quantity=3)
@@ -63,6 +66,7 @@ class TestOrderAPI:
 
     @allure.story("查询订单")
     @allure.title("测试查询某个用户的所有订单")
+    @pytest.mark.smoke
     def test_get_user_orders(self, order_factory):
         """查用户订单列表，验证列表里有刚下的订单"""
         order_info = order_factory(product_name="列表测试商品", price=10.0, quantity=1)
@@ -78,6 +82,7 @@ class TestOrderAPI:
     # ==================== 3. 取消订单 ====================
     @allure.story("取消订单")
     @allure.title("测试取消订单，并验证库存回滚")
+    @pytest.mark.smoke
     def test_cancel_order(self, order_factory):
         """取消订单 -> 状态变 cancelled -> 库存回滚"""
         order_info = order_factory(product_name="取消测试商品", price=20.0, stock=50, quantity=5)
