@@ -31,3 +31,23 @@ jobs:
 
       - name: 运行测试
         run: pytest -v
+
+        
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 打包项目
+        run: |
+          zip -r shopping-moudle.zip . -x "*.git*" -x "*.venv*" -x "*__pycache__*"
+
+      - name: 上传打包产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: shopping-moudle-package
+          path: shopping-moudle.zip
