@@ -1,0 +1,28 @@
+- case_name: 数量为0
+  payload:
+    user_id: 1
+    product_id: 1
+    quantity: 0
+
+- case_name: 数量为负
+  payload:
+    user_id: 1
+    product_id: 1
+    quantity: -1
+
+- case_name: user_id为负
+  payload:
+    user_id: -1
+    product_id: 1
+    quantity: 1
+
+- case_name: 商品id为负
+  payload:
+    user_id: 1
+    product_id: -1
+    quantity: 1
+
+- case_name: 缺少数量字段
+  payload:
+    user_id: 1
+    product_id: 1

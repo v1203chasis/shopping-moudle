@@ -1,0 +1,17 @@
+- case_name: 单件商品
+  price: 25.0
+  stock: 100
+  quantity: 1
+  expected_total: 25.0
+
+- case_name: 多件商品
+  price: 10.0
+  stock: 100
+  quantity: 3
+  expected_total: 30.0
+
+- case_name: 高单价商品
+  price: 999.9
+  stock: 10
+  quantity: 2
+  expected_total: 1999.8

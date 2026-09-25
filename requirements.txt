@@ -7,3 +7,4 @@ jsonschema
 fastapi
 uvicorn
 pydantic
+pyyaml

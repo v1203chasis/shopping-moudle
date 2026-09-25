@@ -2,6 +2,7 @@ import pytest
 import requests
 import allure
 from db_helper import db
+from conftest import load_yaml
 
 BASE_URL = "http://127.0.0.1:8000"
 
@@ -15,10 +16,17 @@ class TestOrderAPI:
     @allure.story("创建订单")
     @allure.title("测试下单成功，并验证库存扣减和订单落库")
     @pytest.mark.smoke
-    def test_create_order(self, order_factory):
+    @pytest.mark.parametrize("case", load_yaml("test_data/order_cases.yaml"))
+    def test_create_order(self, order_factory,case):
         """下单 -> 查接口 -> 查数据库 -> 验证库存扣减"""
-        # 1. 准备数据（工厂会自动下单）
-        order_info = order_factory(product_name="下单测试商品", price=25.0, stock=100, quantity=2)
+           # 1. 从 YAML 读参数，创建订单
+        order_info = order_factory(
+        product_name=case["case_name"],
+        price=case["price"],
+        stock=case["stock"],
+        quantity=case["quantity"]
+         )
+    
         order_id = order_info["order_id"]
         product_id = order_info["product_id"]
 
@@ -26,8 +34,8 @@ class TestOrderAPI:
         response = requests.get(f"{BASE_URL}/api/orders/{order_id}")
         assert response.status_code == 200
         api_data = response.json()["data"]
-        assert api_data["quantity"] == 2
-        assert api_data["total_price"] == 50.0   # 25.0 * 2
+        assert api_data["quantity"] == case["quantity"]
+        assert api_data["total_price"] == case["expected_total"]  # 25.0 * 2
         assert api_data["status"] == "created"
 
         # 3. 直接查数据库，确认订单落库
@@ -36,7 +44,7 @@ class TestOrderAPI:
             (order_id,)
         )
         assert len(db_orders) == 1, "数据库里找不到这条订单！"
-        assert db_orders[0]["total_price"] == 50.0
+        assert db_orders[0]["total_price"] == case["expected_total"]
         assert db_orders[0]["status"] == "created"
 
         # 4. 验证库存是否扣减（100 - 2 = 98）
@@ -44,9 +52,9 @@ class TestOrderAPI:
             "SELECT stock FROM products WHERE id = ?",
             (product_id,)
         )
-        assert db_product[0]["stock"] == 98, f"库存扣减错误，期望 98，实际 {db_product[0]['stock']}"
+        assert db_product[0]["stock"] == case["stock"] - case["quantity"], f"库存扣减错误，期望 98，实际 {db_product[0]['stock']}"
 
-        print(f"\n✅ 下单全链路验证通过！订单ID={order_id}，库存已从100扣减到98。")
+        print(f"\n✅ 用例 [{case['case_name']}] 验证通过！总价 = {case['expected_total']}")
 
     # ==================== 2. 查询订单（单个 + 列表） ====================
     @allure.story("查询订单")
@@ -83,15 +91,16 @@ class TestOrderAPI:
     @allure.story("取消订单")
     @allure.title("测试取消订单，并验证库存回滚")
     @pytest.mark.smoke
-    def test_cancel_order(self, order_factory):
+    @pytest.mark.parametrize("case", load_yaml("test_data/cancel_cases.yaml"))
+    def test_cancel_order(self, order_factory,case):
         """取消订单 -> 状态变 cancelled -> 库存回滚"""
-        order_info = order_factory(product_name="取消测试商品", price=20.0, stock=50, quantity=5)
+        order_info = order_factory(product_name=case["case_name"], price=case["price"], stock=case["stock"], quantity=case["quantity"])
         order_id = order_info["order_id"]
         product_id = order_info["product_id"]
 
         # 1. 取消前，库存应该是 45（50 - 5）
         stock_before = db.execute_query("SELECT stock FROM products WHERE id = ?", (product_id,))[0]["stock"]
-        assert stock_before == 45
+        assert stock_before == case["expected_stock_before"]
 
         # 2. 调用取消接口
         response = requests.put(f"{BASE_URL}/api/orders/{order_id}/cancel")
@@ -104,24 +113,18 @@ class TestOrderAPI:
 
         # 4. 验证库存回滚（应该回到 50）
         stock_after = db.execute_query("SELECT stock FROM products WHERE id = ?", (product_id,))[0]["stock"]
-        assert stock_after == 50, f"库存回滚错误，期望 50，实际 {stock_after}"
+        assert stock_after == case["expected_stock_after"], f"库存回滚错误，期望 50，实际 {stock_after}"
 
-        print(f"\n✅ 取消订单验证通过！库存已从 45 回滚到 50。")
+        print(f"\n✅ 取消订单验证通过！库存已从 {case['expected_stock_before']} 回滚到 {case['expected_stock_after']}。")
 
     # ==================== 4. 参数校验（Pydantic 拦截，参数化） ====================
     @allure.story("订单管理")
     @allure.title("测试下单失败（参数非法）：{case_name}")
-    @pytest.mark.parametrize("case_name, payload", [
-        ("数量为0",       {"user_id": 1, "product_id": 1, "quantity": 0}),
-        ("数量为负",       {"user_id": 1, "product_id": 1, "quantity": -1}),
-        ("user_id为负",    {"user_id": -1, "product_id": 1, "quantity": 1}),
-        ("商品id为负",     {"user_id": 1, "product_id": -1, "quantity": 1}),
-        ("缺少数量字段",     {"user_id": 1, "product_id": 1}),
-    ])
-    def test_create_order_invalid_params(self, case_name, payload):
+    @pytest.mark.parametrize("case", load_yaml("test_data/invalid_order_cases.yaml"),ids=lambda c: c["case_name"])
+    def test_create_order_invalid_params(self,case):
         """参数校验：Pydantic 直接拦截，返回 422，不查数据库"""
-        response = requests.post(f"{BASE_URL}/api/orders", json=payload)
-        assert response.status_code == 422, f"[{case_name}] 期望422，实际{response.status_code}"
+        response = requests.post(f"{BASE_URL}/api/orders", json=case["payload"])
+        assert response.status_code == 422, f"[{case['case_name']}] 期望422，实际{response.status_code}"
 
     # ==================== 5. 业务逻辑异常 ====================
     @allure.story("订单管理")

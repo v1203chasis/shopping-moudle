@@ -1,0 +1,13 @@
+- case_name: 取消单个订单
+  price: 20.0
+  stock: 50
+  quantity: 5
+  expected_stock_before: 45
+  expected_stock_after: 50
+
+- case_name: 取消高库存订单
+  price: 15.0
+  stock: 100
+  quantity: 3
+  expected_stock_before: 97
+  expected_stock_after: 100

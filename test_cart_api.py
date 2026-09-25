@@ -187,3 +187,6 @@ class TestCartAPI:
         # 4. 再查，应该是空的
         check_res = requests.get(f"{BASE_URL}/api/cart?user_id={user_id}")
         assert check_res.json()["data"] == []
+
+
+
