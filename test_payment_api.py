@@ -2,6 +2,8 @@
 import pytest
 import requests
 import allure
+import jsonschema
+from schemas import PAYMENT_SCHEMA, PAY_RESPONSE_SCHEMA
 from db_helper import db
 
 
@@ -28,6 +30,9 @@ class TestPaymentAPI:
         assert response.status_code == 200
         assert response.json()["data"]["status"] == "paid"
 
+        #结构校验
+        api_data = response.json()["data"]
+        jsonschema.validate(api_data, PAY_RESPONSE_SCHEMA)
         # 3. 查数据库，验证订单状态
         db_order = db.execute_query("SELECT status FROM orders WHERE id = ?", (order_id,))
         assert db_order[0]["status"] == "paid"
@@ -53,6 +58,9 @@ class TestPaymentAPI:
         order_id = payment_info["order_id"]
 
         response = requests.get(f"{BASE_URL}/api/payments/{order_id}")
+        #结构校验
+        api_data = response.json()["data"]
+        jsonschema.validate(api_data, PAYMENT_SCHEMA)
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["order_id"] == order_id

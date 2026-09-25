@@ -1,6 +1,8 @@
 import pytest
 import requests
 import allure
+import jsonschema
+from schemas import PRODUCT_SCHEMA
 from db_helper import db
 
 
@@ -30,6 +32,10 @@ class TestProductAPI:
         response = requests.get(f"{BASE_URL}/api/products/{product_id}")
         assert response.status_code == 200
         api_data = response.json()["data"]
+
+        # 结构校验
+        jsonschema.validate(api_data, PRODUCT_SCHEMA)
+        
         assert api_data is not None, "GET 接口查不到刚创建的商品！"
         assert api_data["name"] == name
 

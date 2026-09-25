@@ -1,6 +1,8 @@
 import pytest
 import requests
 import allure
+import jsonschema
+from schemas import ORDER_SCHEMA
 from db_helper import db
 from conftest import load_yaml
 
@@ -34,6 +36,9 @@ class TestOrderAPI:
         response = requests.get(f"{BASE_URL}/api/orders/{order_id}")
         assert response.status_code == 200
         api_data = response.json()["data"]
+        # 结构校验
+        jsonschema.validate(api_data, ORDER_SCHEMA)
+
         assert api_data["quantity"] == case["quantity"]
         assert api_data["total_price"] == case["expected_total"]  # 25.0 * 2
         assert api_data["status"] == "created"
